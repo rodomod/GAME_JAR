@@ -1,10 +1,36 @@
-import java.awt.*;
-import java.awt.event.*;
-import javax.swing.*;
+import java.awt.AWTException;
+import java.awt.BorderLayout;
+import java.awt.Color;
+import java.awt.Dimension;
+import java.awt.Graphics;
+import java.awt.Graphics2D;
+import java.awt.Insets;
+import java.awt.MouseInfo;
+import java.awt.Point;
+import java.awt.Robot;
+import java.awt.Toolkit;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.image.BufferedImage;
+import java.io.IOException;
+import javax.imageio.ImageIO;
+import javax.swing.JButton;
+import javax.swing.JFrame;
+import javax.swing.JLayeredPane;
+import javax.swing.JPanel;
+import javax.swing.JSlider;
 
 public class Main {
-public Main(){}
-public static void main(String args[])  {
+    static CursorPanel cursorPanel = new CursorPanel();
+    static BufferedImage cursorImage = null;
+    static JFrame frame = new JFrame("X/Y Mouse");
+    static JLayeredPane overlay = new JLayeredPane();
+    static JSlider horizontalSlider = null;
+    static JSlider verticalSlider = null;
+    static Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
+    static Point mouseLocation = MouseInfo.getPointerInfo().getLocation();
+	 
+public static void main(String args[]) {
         frame.setDefaultCloseOperation(3);
         frame.setExtendedState(6);
         frame.setUndecorated(true);
@@ -25,13 +51,16 @@ public static void main(String args[])  {
         JButton clickButton = new JButton("Click!");
         clickButton.setMargin(new Insets(0, 0, 0, 0));
         clickButton.setBounds(screenSize.width - 50, screenSize.height - 50, 50, 50);
-        clickButton.addActionListener(new ActionListener() {
-                     public void actionPerformed(ActionEvent event) {
-                            Robot clicker;
-  try {
-        clicker = new Robot();
-    } catch(AWTException exeption) {
-                    return;  }
+        overlay.add(clickButton, new Integer(2));//
+        frame.pack();
+        frame.setVisible(true);
+        boolean hSliderShown = false;
+        boolean vSliderShown = false;
+clickButton.addActionListener(new ActionListener() {
+                public void actionPerformed(ActionEvent event) {
+                Robot clicker;
+             try{clicker = new Robot();
+                }catch(AWTException exeption){return;}
                 int oldX = Main.mouseLocation.x;
                 int oldY = Main.mouseLocation.y;
                 Main.frame.setBackground(new Color(0, 0, 0, 0));
@@ -40,39 +69,41 @@ public static void main(String args[])  {
                 clicker.mouseRelease(1024);
                 Main.frame.setBackground(new Color(0, 0, 0, 1));
                 clicker.mouseMove(oldX, oldY);
-                     } 
-			});
-        overlay.add(clickButton, new Integer(2));
-        frame.pack();
-        frame.setVisible(true);
-        boolean hSliderShown = false;
-        boolean vSliderShown = false;
-   for(boolean isRunning = true; isRunning; cursorPanel.repaint()) {
+                     }
+});
+for(boolean isRunning = true; isRunning; cursorPanel.repaint()) {
             mouseLocation = MouseInfo.getPointerInfo().getLocation();
-     if(mouseLocation.y == 0 && !vSliderShown && !hSliderShown) {
+if(mouseLocation.y == 0 && !vSliderShown && !hSliderShown) {
                 overlay.add(horizontalSlider, new Integer(2));
                 hSliderShown = true;
-   } else  if(mouseLocation.y > 16 && hSliderShown) {
+ }else if(mouseLocation.y > 16 && hSliderShown) {
                 overlay.remove(horizontalSlider);
                 hSliderShown = false;
             }
-    if(mouseLocation.x == 0 && !hSliderShown && !vSliderShown)  {
+if(mouseLocation.x == 0 && !hSliderShown && !vSliderShown) {
                 overlay.add(verticalSlider, new Integer(2));
                 vSliderShown = true;
                 continue;
             }
-    if(mouseLocation.x > 16 && vSliderShown) {
+if(mouseLocation.x > 16 && vSliderShown) {
                 overlay.remove(verticalSlider);
                 vSliderShown = false;
             }
         }
-   }
 
-    static JFrame frame = new JFrame("X/Y Mouse");
-    static JLayeredPane overlay = new JLayeredPane();
-    static CursorPanel cursorPanel = new CursorPanel();
-    static JSlider horizontalSlider = null;
-    static JSlider verticalSlider = null;
-    static Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
-    static Point mouseLocation = MouseInfo.getPointerInfo().getLocation();
-           }
+    }
+static class CursorPanel extends JPanel {
+CursorPanel() { 
+            setOpaque(false);
+		 try{  cursorImage = ImageIO.read(Main.getClassLoader().getResource("Crosshair.png"));  //this and Game ...
+		   }catch(IOException e){return;}         
+		         requestFocus();
+		     }
+protected void paintComponent(Graphics g) {
+		         super.paintComponent(g);
+		         Graphics2D pen = (Graphics2D)g.create();
+		 		pen.drawImage(cursorImage, Main.horizontalSlider.getValue() - 8, Main.verticalSlider.getValue() - 8, this);
+		         pen.dispose();
+		     } 
+		}
+   }
